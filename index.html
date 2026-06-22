@@ -384,10 +384,10 @@
     .legend-color.confirmed { background-color: var(--confirmed-bg); border: 1px solid var(--confirmed-border); }
     .legend-color.pending { background-color: var(--pending-bg); border: 1px dashed var(--pending-border); }
 
-    /* Badge Colors by Floor */
-    .booking-badge.room-1f { color: #000000; }
-    .booking-badge.room-2f { color: #808080; }
-    .booking-badge.room-all { color: #556B2F; }
+    /* Badge Colors by Floor (Distinct Colors) */
+    .booking-badge.room-1f { color: #2E7D32; } /* Green */
+    .booking-badge.room-2f { color: #1565C0; } /* Blue */
+    .booking-badge.room-all { color: #E65100; } /* Orange */
 
     /* Calculator styling */
     .price-calculator-section {
@@ -523,18 +523,18 @@
         <div class="calc-amount" id="calc-amount-all">0원</div>
       </div>
       
-      <div class="calc-row">
-        <div class="calc-label">총 인원<br><span style="font-size:0.8rem; color:var(--text-muted);">(기본: 1,2층 단독 3명 / 전체대관 5명)</span></div>
-        <div class="calc-inputs">
+      <div class="calc-row" style="flex-wrap: nowrap; border-bottom: 1px solid #f0f0f0;">
+        <div class="calc-label" style="flex: 2; min-width: 180px;">총 인원 <span style="font-size:0.8rem; color:var(--text-muted);">(기본: 1,2층 단독 3명 / 전체대관 5명)</span></div>
+        <div class="calc-inputs" style="justify-content: flex-end; flex: 1;">
           <input type="number" id="calc-guests" value="0" min="0" oninput="calculatePrice()" style="width: 80px; text-align: right;"> 명
         </div>
-        <div class="calc-amount"></div>
+        <div class="calc-amount" style="display:none;"></div>
       </div>
       
-      <div class="calc-row">
-        <div class="calc-label" style="color: var(--text-muted); font-size: 0.9rem;">인원 추가 비용 (<span id="calc-price-extra">0</span>원/명)</div>
-        <div class="calc-inputs"></div>
-        <div class="calc-amount" id="calc-amount-extra" style="color: var(--text-muted);">0원</div>
+      <div class="calc-row" style="flex-wrap: nowrap;">
+        <div class="calc-label" style="color: var(--text-muted); font-size: 0.9rem; flex: 2; min-width: 180px;">인원 추가 비용 (<span id="calc-price-extra">0</span>원/명)</div>
+        <div class="calc-inputs" style="flex: 0; min-width: 0;"></div>
+        <div class="calc-amount" id="calc-amount-extra" style="color: var(--text-muted); flex: 1;">0원</div>
       </div>
       
       <div class="calc-total">
@@ -542,7 +542,7 @@
         <div id="calc-amount-total">0원</div>
       </div>
       
-      <div id="calc-additional-info" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-align: center; border-top: 1px dashed var(--border-light); padding-top: 1rem;">
+      <div id="calc-additional-info" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-align: left; border-top: 1px dashed var(--border-light); padding-top: 1rem; line-height: 1.6;">
         - 층별 금액은 시간당입니다.<br>
         - 최소 예약 시간은 2시간입니다.<br>
         - 계산된 가격은 예상금액이며, 상담 후 최종 확정됩니다.
@@ -558,9 +558,9 @@
       <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
         <h2 id="calendar-title" style="margin:0;">2026.06</h2>
         <div class="legend-container" style="justify-content:center; margin:0;">
-          <div class="legend-item" style="color:#000000; font-weight:600;">1층</div>
-          <div class="legend-item" style="color:#808080; font-weight:600;">2층</div>
-          <div class="legend-item" style="color:#556B2F; font-weight:600;">전체</div>
+          <div class="legend-item" style="color:#2E7D32; font-weight:600;">1층</div>
+          <div class="legend-item" style="color:#1565C0; font-weight:600;">2층</div>
+          <div class="legend-item" style="color:#E65100; font-weight:600;">전체</div>
         </div>
       </div>
       <button onclick="nextMonth()">다음달 &gt;</button>
@@ -599,9 +599,9 @@
           <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
             <h2 id="admin-calendar-title" style="margin:0;">2026.06</h2>
             <div class="legend-container" style="justify-content:center; margin:0;">
-              <div class="legend-item" style="color:#000000; font-weight:600;">1층</div>
-              <div class="legend-item" style="color:#808080; font-weight:600;">2층</div>
-              <div class="legend-item" style="color:#556B2F; font-weight:600;">전체</div>
+              <div class="legend-item" style="color:#2E7D32; font-weight:600;">1층</div>
+              <div class="legend-item" style="color:#1565C0; font-weight:600;">2층</div>
+              <div class="legend-item" style="color:#E65100; font-weight:600;">전체</div>
             </div>
           </div>
           <button onclick="nextMonth()">다음달 &gt;</button>
