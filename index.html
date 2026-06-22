@@ -676,27 +676,41 @@
         <div class="form-row">
           <div class="form-group">
             <label>시작 시간 *</label>
-            <select id="res-start-hour" required onchange="updateEndHourOptions()"></select>
+            <select id="res-start-hour" required onchange="updateEndHourOptions(); calculateAdminPrice();"></select>
           </div>
           <div class="form-group">
             <label>종료 시간 *</label>
-            <select id="res-end-hour" required></select>
+            <select id="res-end-hour" required onchange="calculateAdminPrice()"></select>
           </div>
         </div>
         <div class="form-group">
           <label>이용할 층 *</label>
-          <select id="res-room" required>
+          <select id="res-room" required onchange="calculateAdminPrice()">
             <option value="1층">1층</option>
             <option value="2층">2층</option>
             <option value="전체">전체</option>
           </select>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>총 인원</label>
+            <input type="number" id="res-admin-guests" min="0" value="0" oninput="calculateAdminPrice()" style="width:100%;">
+          </div>
+          <div class="form-group">
+            <label>상태 *</label>
+            <select id="res-status" required>
+              <option value="pending">예약대기</option>
+              <option value="confirmed">예약완료</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="background: #FAF8F5; padding: 1rem; border-radius: 4px; border: 1px solid var(--border-light);">
+          <label style="margin-bottom: 0.5rem; display: block; color: var(--text-muted);">자동계산 내역</label>
+          <div id="res-admin-price" style="font-weight: 700; color: var(--text-brown); font-size: 1.2rem;">0원</div>
+        </div>
         <div class="form-group">
-          <label>상태 *</label>
-          <select id="res-status" required>
-            <option value="pending">예약대기</option>
-            <option value="confirmed">예약완료</option>
-          </select>
+          <label>특이사항</label>
+          <textarea id="res-admin-notes" rows="3" placeholder="메모할 특이사항을 입력하세요..."></textarea>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 1rem;">
           <button type="submit" class="btn" style="flex: 2;">저장</button>
@@ -1090,6 +1104,8 @@
         document.getElementById('res-end-hour').value = res.end_hour;
         document.getElementById('res-room').value = res.room;
         document.getElementById('res-status').value = res.status;
+        document.getElementById('res-admin-guests').value = res.guest_count || 0;
+        document.getElementById('res-admin-notes').value = res.description || '';
         document.getElementById('btn-delete').style.display = 'block';
       } else {
         document.getElementById('form-panel-title').innerText = '예약 등록';
@@ -1100,9 +1116,34 @@
         updateEndHourOptions();
         document.getElementById('res-room').value = '1층';
         document.getElementById('res-status').value = 'pending';
+        document.getElementById('res-admin-guests').value = 0;
+        document.getElementById('res-admin-notes').value = '';
         document.getElementById('btn-delete').style.display = 'none';
       }
+      calculateAdminPrice();
       document.getElementById('reg-modal').classList.add('show');
+    }
+
+    function calculateAdminPrice() {
+      const room = document.getElementById('res-room').value;
+      let pricePerHour = 0;
+      let baseGuests = 0;
+      if (room === '1층') { pricePerHour = parseInt(appSettings.price1f) || 0; baseGuests = 3; }
+      else if (room === '2층') { pricePerHour = parseInt(appSettings.price2f) || 0; baseGuests = 3; }
+      else if (room === '전체') { pricePerHour = parseInt(appSettings.priceAll) || 0; baseGuests = 5; }
+
+      const s = parseInt(document.getElementById('res-start-hour').value) || 0;
+      const e = parseInt(document.getElementById('res-end-hour').value) || 0;
+      let hours = Math.max(0, e - s);
+      
+      const guests = parseInt(document.getElementById('res-admin-guests').value) || 0;
+      const pex = parseInt(appSettings.priceExtra) || 0;
+      
+      let extraGuests = Math.max(0, guests - baseGuests);
+      if (hours === 0) extraGuests = 0;
+
+      const total = (hours * pricePerHour) + (extraGuests * pex * hours);
+      document.getElementById('res-admin-price').innerText = total.toLocaleString() + '원';
     }
 
     async function saveReservation(e) {
@@ -1117,9 +1158,9 @@
         room: document.getElementById('res-room').value,
         status: document.getElementById('res-status').value,
         parking_count: "",
-        guest_count: "",
-        total_price: "",
-        description: ""
+        guest_count: document.getElementById('res-admin-guests').value,
+        total_price: document.getElementById('res-admin-price').innerText,
+        description: document.getElementById('res-admin-notes').value
       };
 
       // Duplicate Check
