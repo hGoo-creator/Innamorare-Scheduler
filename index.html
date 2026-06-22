@@ -781,14 +781,21 @@
         reservations = data.reservations || [];
         
         // Extract Settings from reservations to sync across devices
-        const settingsRes = reservations.find(r => r.name === "SETTINGS_DATA");
-        if (settingsRes) {
+        const settingsRecords = reservations.filter(r => r.name === "SETTINGS_DATA");
+        if (settingsRecords.length > 0) {
+          // Use the last one (most recent if duplicated)
+          const latestSettings = settingsRecords[settingsRecords.length - 1];
           try {
-            const fetchedSettings = JSON.parse(settingsRes.description);
+            const fetchedSettings = JSON.parse(latestSettings.description);
             appSettings = { ...appSettings, ...fetchedSettings };
             localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
           } catch(e) {}
-          reservations = reservations.filter(r => r.name !== "SETTINGS_DATA");
+          
+          // Clean up duplicates by keeping only the latest one
+          if (settingsRecords.length > 1) {
+             reservations = reservations.filter(r => r.name !== "SETTINGS_DATA");
+             reservations.push(latestSettings);
+          }
         }
       } catch (err) {
         console.error("Fetch API fail, using local storage fallback.");
@@ -1061,7 +1068,7 @@
       nd.innerText = d;
       cell.appendChild(nd);
 
-      const dayRes = reservations.filter(r => r && r.start_date && r.start_date.substring(0,10) === ds && (isAdmin || currentFilter === '전체' || (r.room && r.room.includes(currentFilter)) || r.room === '전체'));
+      const dayRes = reservations.filter(r => r && r.name !== 'SETTINGS_DATA' && r.start_date && r.start_date.substring(0,10) === ds && (isAdmin || currentFilter === '전체' || (r.room && r.room.includes(currentFilter)) || r.room === '전체'));
       dayRes.sort((a,b) => (a.start_hour || 0) - (b.start_hour || 0));
 
       dayRes.forEach(r => {
