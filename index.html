@@ -654,14 +654,14 @@
         reservations = data.reservations || [];
         
         // Extract Settings from reservations to sync across devices
-        const settingsRes = reservations.find(r => r.room === "SETTINGS");
+        const settingsRes = reservations.find(r => r.name === "SETTINGS_DATA");
         if (settingsRes) {
           try {
-            const fetchedSettings = JSON.parse(settingsRes.name);
+            const fetchedSettings = JSON.parse(settingsRes.description);
             appSettings = { ...appSettings, ...fetchedSettings };
             localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
           } catch(e) {}
-          reservations = reservations.filter(r => r.room !== "SETTINGS");
+          reservations = reservations.filter(r => r.name !== "SETTINGS_DATA");
         }
       } catch (err) {
         console.error("Fetch API fail, using local storage fallback.");
@@ -769,17 +769,19 @@
       localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
       
       const settingsStr = JSON.stringify(appSettings);
-      let settingsRes = reservations.find(r => r.room === "SETTINGS");
+      let settingsRes = reservations.find(r => r.name === "SETTINGS_DATA");
       if (settingsRes) {
-        settingsRes.name = settingsStr;
+        settingsRes.description = settingsStr;
       } else {
         reservations.push({
           id: Date.now() + 999999,
           start_date: "2099-12-31",
           start_hour: 0, end_hour: 0,
-          room: "SETTINGS",
-          name: settingsStr,
-          contact: "", status: "confirmed"
+          room: "1층",
+          name: "SETTINGS_DATA",
+          contact: "", status: "confirmed",
+          parking_count: "", guest_count: "", total_price: "",
+          description: settingsStr
         });
       }
       
@@ -1020,13 +1022,17 @@
         start_hour: parseInt(document.getElementById('res-start-hour').value),
         end_hour: parseInt(document.getElementById('res-end-hour').value),
         room: document.getElementById('res-room').value,
-        status: document.getElementById('res-status').value
+        status: document.getElementById('res-status').value,
+        parking_count: "",
+        guest_count: "",
+        total_price: "",
+        description: ""
       };
 
       // Duplicate Check
       const overlap = reservations.find(ex => ex.start_date === r.start_date && ex.id != id && 
         Math.max(r.start_hour, ex.start_hour) < Math.min(r.end_hour, ex.end_hour) && 
-        (r.room === ex.room || r.room === '전체 대관' || ex.room === '전체 대관')
+        (r.room === ex.room || r.room === '전체' || ex.room === '전체')
       );
       if (overlap) return alert('해당 시간에 이미 겹치는 예약이 존재합니다.');
 
