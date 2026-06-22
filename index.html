@@ -208,28 +208,30 @@
 
     /* Event Badges */
     .booking-badge {
-      font-size: 0.85rem;
-      padding: 0.2rem 0;
+      font-size: 0.95rem;
+      padding: 0.3rem 0;
+      padding-left: 6px; /* Left margin */
       cursor: pointer;
       text-align: left; /* STRICT LEFT ALIGNMENT */
-      padding-left: 5px; /* STRICT LEFT ALIGNMENT */
       overflow: hidden;
-      line-height: 1.4;
       display: block;
       font-family: var(--font-body);
       background: transparent;
       border: none;
+    }
+    .badge-line-1, .badge-line-2 {
+      display: block;
       white-space: nowrap;
+      overflow: hidden;
       text-overflow: ellipsis;
+      line-height: 1.4;
     }
     .badge-line-1 {
-      font-weight: 600;
-      display: inline-block;
-      margin-right: 0.3rem;
+      font-weight: 700;
     }
     .badge-line-2 {
       font-size: 0.85rem;
-      display: inline-block;
+      opacity: 0.9;
     }
 
     /* Modals */
@@ -756,7 +758,7 @@
   </div>
 
   <script>
-    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyXS_-s8my8kV7HAzqGL6-7CI8HSQCrLG7jF1Wr92sPVDfSCAcHkt9eFDkVtr9PY3B5ew/exec";
+    const API_URL = "/api/reservations";
     
     let currentDate = new Date();
     // currentDate.setFullYear(2026, 5, 21); // Remove this to load actual current month
@@ -776,7 +778,7 @@
 
     async function fetchData() {
       try {
-        const res = await fetch(`${SHEET_API_URL}?action=getData`);
+        const res = await fetch(API_URL);
         const data = await res.json();
         reservations = data.reservations || [];
         
@@ -811,9 +813,9 @@
 
     async function postData() {
       try {
-        await fetch(SHEET_API_URL, {
-          method: "POST", mode: "cors",
-          headers: { "Content-Type": "text/plain" },
+        await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "saveReservations", reservations })
         });
       } catch (err) {
@@ -1076,8 +1078,8 @@
         let roomClass = r.room === '1층' ? 'room-1f' : r.room === '2층' ? 'room-2f' : r.room === '전체' ? 'room-all' : '';
         badge.className = `booking-badge ${roomClass}`;
         const roomName = r.room ? r.room : '';
-        // Event Content: Time and Floor only
-        badge.innerHTML = `<span class="badge-line-1">${r.start_hour || ''}~${r.end_hour || ''}시</span> <span class="badge-line-2">${roomName}</span>`;
+        // Event Content: [층] 이름**님 / (시간)
+        badge.innerHTML = `<div class="badge-line-1">[${roomName}] ${maskName(r.name)}</div><div class="badge-line-2">(${r.start_hour || ''}~${r.end_hour || ''}시)</div>`;
         badge.onclick = (e) => { e.stopPropagation(); isAdmin ? openRegModal(ds, r) : openDetailModal(r); };
         cell.appendChild(badge);
       });
