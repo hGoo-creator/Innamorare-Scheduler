@@ -209,8 +209,7 @@
     /* Event Badges */
     .booking-badge {
       font-size: 0.85rem;
-      padding: 0.4rem 0.5rem;
-      border-radius: 4px;
+      padding: 0.2rem 0;
       cursor: pointer;
       text-align: left; /* STRICT LEFT ALIGNMENT */
       padding-left: 5px; /* STRICT LEFT ALIGNMENT */
@@ -218,26 +217,17 @@
       line-height: 1.4;
       display: block;
       font-family: var(--font-body);
+      background: transparent;
+      border: none;
     }
     .badge-line-1 {
-      font-weight: 700;
-      display: block;
-      margin-bottom: 0.1rem;
+      font-weight: 600;
+      display: inline-block;
+      margin-right: 0.3rem;
     }
     .badge-line-2 {
-      font-size: 0.8rem;
-      opacity: 0.95;
-      display: block;
-    }
-    .booking-badge.confirmed {
-      background-color: var(--confirmed-bg);
-      color: var(--confirmed-text);
-      border: 1px solid var(--confirmed-border);
-    }
-    .booking-badge.pending {
-      background-color: var(--pending-bg);
-      color: var(--pending-text);
-      border: 1px dashed var(--pending-border);
+      font-size: 0.85rem;
+      display: inline-block;
     }
 
     /* Modals */
@@ -395,9 +385,9 @@
     .legend-color.pending { background-color: var(--pending-bg); border: 1px dashed var(--pending-border); }
 
     /* Badge Colors by Floor */
-    .booking-badge.room-1f { background-color: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
-    .booking-badge.room-2f { background-color: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; }
-    .booking-badge.room-all { background-color: #FFF3E0; color: #E65100; border: 1px solid #FFE0B2; }
+    .booking-badge.room-1f { color: #000000; }
+    .booking-badge.room-2f { color: #808080; }
+    .booking-badge.room-all { color: #556B2F; }
 
     /* Calculator styling */
     .price-calculator-section {
@@ -473,8 +463,8 @@
       .calc-inputs select, .calc-inputs input { padding: 0.3rem; font-size: 0.85rem; }
       .calc-amount { font-size: 0.9rem; }
       .day-cell { min-width: 0; overflow: hidden; } /* Prevent ratio break */
-      .badge-line-1 { font-size: 0.75rem !important; }
-      .badge-line-2 { font-size: 0.7rem !important; }
+      .badge-line-1 { font-size: 0.8rem !important; }
+      .badge-line-2 { font-size: 0.8rem !important; }
     }
   </style>
 </head>
@@ -507,7 +497,7 @@
       <h3 style="margin-bottom: 1rem; color: var(--text-brown); text-align: center;">대관 비용 계산기</h3>
       
       <div class="calc-row">
-        <div class="calc-label">1층 (<span id="calc-price-1f">0</span>원/시간)</div>
+        <div class="calc-label">1층 (<span id="calc-price-1f">0</span>원)</div>
         <div class="calc-inputs">
           <select id="calc-start-1f" onchange="calculatePrice()"><option value="">시작</option></select> ~
           <select id="calc-end-1f" onchange="calculatePrice()"><option value="">종료</option></select>
@@ -516,7 +506,7 @@
       </div>
       
       <div class="calc-row">
-        <div class="calc-label">2층 (<span id="calc-price-2f">0</span>원/시간)</div>
+        <div class="calc-label">2층 (<span id="calc-price-2f">0</span>원)</div>
         <div class="calc-inputs">
           <select id="calc-start-2f" onchange="calculatePrice()"><option value="">시작</option></select> ~
           <select id="calc-end-2f" onchange="calculatePrice()"><option value="">종료</option></select>
@@ -525,7 +515,7 @@
       </div>
       
       <div class="calc-row">
-        <div class="calc-label">전체 (<span id="calc-price-all">0</span>원/시간)</div>
+        <div class="calc-label">전체 (<span id="calc-price-all">0</span>원)</div>
         <div class="calc-inputs">
           <select id="calc-start-all" onchange="calculatePrice()"><option value="">시작</option></select> ~
           <select id="calc-end-all" onchange="calculatePrice()"><option value="">종료</option></select>
@@ -548,11 +538,12 @@
       </div>
       
       <div class="calc-total">
-        <div>합계</div>
+        <div>합계 <span style="font-size:0.8rem; font-weight:normal;">(부가세 포함)</span></div>
         <div id="calc-amount-total">0원</div>
       </div>
       
       <div id="calc-additional-info" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-align: center; border-top: 1px dashed var(--border-light); padding-top: 1rem;">
+        - 층별 금액은 시간당입니다.<br>
         - 최소 예약 시간은 2시간입니다.<br>
         - 계산된 가격은 예상금액이며, 상담 후 최종 확정됩니다.
       </div>
@@ -562,15 +553,16 @@
   <!-- Visitor View -->
   <div id="view-visitor" class="view-section active container">
 
-    <div class="legend-container">
-      <div class="legend-item"><span class="legend-color" style="background:#E8F5E9; border:1px solid #C8E6C9;"></span>1층</div>
-      <div class="legend-item"><span class="legend-color" style="background:#E3F2FD; border:1px solid #BBDEFB;"></span>2층</div>
-      <div class="legend-item"><span class="legend-color" style="background:#FFF3E0; border:1px solid #FFE0B2;"></span>전체</div>
-    </div>
-
     <div class="calendar-nav">
       <button onclick="prevMonth()">&lt; 이전달</button>
-      <h2 id="calendar-title">2026.06</h2>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+        <h2 id="calendar-title" style="margin:0;">2026.06</h2>
+        <div class="legend-container" style="justify-content:center; margin:0;">
+          <div class="legend-item" style="color:#000000; font-weight:600;">1층</div>
+          <div class="legend-item" style="color:#808080; font-weight:600;">2층</div>
+          <div class="legend-item" style="color:#556B2F; font-weight:600;">전체</div>
+        </div>
+      </div>
       <button onclick="nextMonth()">다음달 &gt;</button>
     </div>
 
@@ -604,30 +596,19 @@
       <div class="admin-panel">
         <div class="calendar-nav">
           <button onclick="prevMonth()">&lt; 이전달</button>
-          <h2 id="admin-calendar-title">2026.06</h2>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+            <h2 id="admin-calendar-title" style="margin:0;">2026.06</h2>
+            <div class="legend-container" style="justify-content:center; margin:0;">
+              <div class="legend-item" style="color:#000000; font-weight:600;">1층</div>
+              <div class="legend-item" style="color:#808080; font-weight:600;">2층</div>
+              <div class="legend-item" style="color:#556B2F; font-weight:600;">전체</div>
+            </div>
+          </div>
           <button onclick="nextMonth()">다음달 &gt;</button>
         </div>
         <div class="calendar-grid" id="admin-calendar-grid"></div>
       </div>
 
-      <div class="admin-panel">
-        <h3>전체 예약 목록 (최근 순)</h3>
-        <div style="overflow-x: auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>이용일</th>
-                <th>시간</th>
-                <th>공간</th>
-                <th>예약자</th>
-                <th>연락처</th>
-                <th>상태</th>
-              </tr>
-            </thead>
-            <tbody id="reservations-list-body"></tbody>
-          </table>
-        </div>
-      </div>
 
       <div class="admin-panel">
         <h3>링크 및 설정 관리</h3>
@@ -829,7 +810,6 @@
         document.getElementById('admin-operations').style.display = 'block';
         loadSettingsInputs();
         renderAdminCalendar();
-        renderReservationsTable();
       }
     }
 
@@ -986,7 +966,6 @@
         document.getElementById('admin-operations').style.display = 'block';
         loadSettingsInputs();
         renderAdminCalendar();
-        renderReservationsTable();
       } else {
         alert("비밀번호가 올바르지 않습니다.");
       }
@@ -1011,7 +990,6 @@
     function renderAll() {
       if (isViewModeAdmin && isAdminLoggedIn) {
         renderAdminCalendar();
-        renderReservationsTable();
       } else {
         renderCalendar();
       }
@@ -1073,7 +1051,7 @@
         badge.className = `booking-badge ${roomClass}`;
         const roomName = r.room ? r.room : '';
         // Event Content: Time and Floor only
-        badge.innerHTML = `<span class="badge-line-1" style="font-weight:600;">${r.start_hour || ''}~${r.end_hour || ''}시</span><span class="badge-line-2">${roomName}</span>`;
+        badge.innerHTML = `<span class="badge-line-1">[${r.start_hour || ''}~${r.end_hour || ''}시]</span><span class="badge-line-2">${roomName}</span>`;
         badge.onclick = (e) => { e.stopPropagation(); isAdmin ? openRegModal(ds, r) : openDetailModal(r); };
         cell.appendChild(badge);
       });
@@ -1082,22 +1060,6 @@
 
     function renderCalendar() { renderGrid('calendar-grid', false); }
     function renderAdminCalendar() { renderGrid('admin-calendar-grid', true); }
-
-    function renderReservationsTable() {
-      const tbody = document.getElementById('reservations-list-body');
-      tbody.innerHTML = '';
-      [...reservations].sort((a,b) => {
-        const da = a.start_date || '';
-        const db = b.start_date || '';
-        return db.localeCompare(da);
-      }).forEach(r => {
-        const tr = document.createElement('tr');
-        tr.style.cursor = 'pointer';
-        tr.onclick = () => openRegModal(r.start_date, r);
-        tr.innerHTML = `<td>${r.start_date || ''}</td><td>${r.start_hour || ''}~${r.end_hour || ''}시</td><td>${r.room || ''}</td><td>${r.name || ''}</td><td>${r.contact || ''}</td><td>${r.status==='confirmed'?'완료':'대기'}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
 
     function initHours() {
       const sh = document.getElementById('res-start-hour');
