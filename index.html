@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Innamorare Studio Scheduler</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ko.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #FDF9F3; /* 크림색 배경 */
+            --accent-color: #4A3A2A; /* 다크 브라운 */
+            --text-color: #5D4D3D;
+            --border-color: #D6C7B5;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Lato', 'Noto Sans KR', sans-serif;
+            /* 5. 전체적인 기본 폰트 사이즈 대폭 확대 */
+            font-size: 18px; 
+            margin: 0; padding: 20px;
+            line-height: 1.6;
+        }
+
+        .studio-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent-color);
+            text-align: center;
+            font-size: 3rem;
+            margin-top: 10px;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+        
+        .info-bar {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        /* 2. 캘린더 크기가 화면 크기에 맞게 자동 조절되도록 최적화 */
+        #calendar-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 40px auto;
+        }
+
+        #calendar {
+            background: white;
+            padding: 24px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(74, 58, 42, 0.05);
+            width: 100%;
+            height: auto; 
+            min-height: 650px; 
+        }
+
+        /* 캘린더 내부 폰트 및 예약자 표시 두 줄 + 왼쪽 정렬 최적화 */
+        .fc { font-size: 1rem !important; }
+        .fc-event { cursor: pointer; border: none !important; border-radius: 4px !important; }
+        .fc-event-main {
+            text-align: left !important; /* 요청사항: 왼쪽 정렬로 적용 */
+            padding: 6px 8px !important; /* 왼쪽 글자가 벽에 붙지 않게 여백 추가 */
+            font-size: 0.9rem !important;
+            line-height: 1.4 !important;
+            font-weight: 500;
+            white-space: pre-wrap !important; /* 두 줄 처리 줄바꿈 유지 */
+        }
+        .fc-daygrid-day-number { font-size: 1.05rem !important; padding: 8px !important; color: var(--text-color); }
+        .fc-col-header-cell-cushion { font-size: 1.05rem !important; padding: 10px 0 !important; color: var(--accent-color) !important; }
+
+        /* 4. 날짜 클릭 시 나타나는 예약 등록 팝업(모달) 스타일 */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 99999;
+            left: 0; top: 0; 
+            width: 100%; height: 100%;
+            background-color: rgba(74, 58, 42, 0.6);
+            backdrop-filter: blur(3px);
+            justify-content: center; 
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background-color: var(--bg-color);
+            padding: 35px; 
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            width: 100%; 
+            max-width: 520px;
+            max-height: 90vh; 
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .close-modal {
+            position: absolute; right: 25px; top: 20px;
+            font-size: 32px; cursor: pointer; color: var(--accent-color);
+        }
+        .modal-title {
+            font-family: 'Playfair Display', 'Noto Sans KR', serif;
+            font-size: 1.6rem;
+            color: var(--accent-color);
+            margin-top: 0; margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* 폼 요소 스타일 및 크기 확대 */
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: bold; color: var(--accent-color); }
+        input[type="text"], input[type="tel"], input[type="number"], input[type="date"], select {
+            width: 100%; padding: 14px; 
+            border-radius: 8px; border: 1px solid var(--border-color);
+            font-size: 1.05rem; background-color: #fff;
+            color: var(--text-color);
+        }
+        
+        .time-range-group { display: flex; gap: 10px; }
+        .time-range-group input { flex: 1; text-align: center; }
+
+        button.btn-submit {
+            width: 100%; padding: 16px; margin-top: 10px;
+            border-radius: 8px; border: none;
+            background-color: var(--accent-color); color: white;
+            font-size: 1.15rem; font-weight: bold; cursor: pointer;
+        }
+
+        #pricePreview {
+            background-color: #F4EFE6;
+            padding: 15px; border-radius: 8px;
+            margin-bottom: 15px; font-size: 1rem;
+            color: var(--accent-color); border: 1px dashed var(--border-color);
+        }
+
+        .admin-login-trigger {
+            position: fixed; bottom: 15px; right: 15px;
+            background: none; border: none; color: var(--border-color);
+            font-size: 0.85rem; cursor: pointer; z-index: 999;
+        }
+
+        /* 모바일 최적화 반응형 쿼리 */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .studio-title { font-size: 2.2rem; margin-bottom: 10px; }
+            #calendar { padding: 10px; min-height: 500px; }
+            .fc { font-size: 0.85rem !important; }
+            .fc-event-main { font-size: 0.75rem !important; padding: 4px 6px !important; }
+            .modal-content { padding: 25px 20px; width: 95%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="studio-title">Innamorare Studio</div>
+    <div class="info-bar">예약 문의 (DM)</div>
+    
+    <div id="calendar-container">
+        <div id="calendar"></div>
+    </div>
+
+    <div id="registrationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div class="modal-title" id="modalDateTitle">예약 신청</div>
+            
+            <form id="reservationForm" onsubmit="handleReservationSubmit(event)">
+                <div class="form-group">
+                    <label>선택한 날짜</label>
+                    <input type="date" id="resDate" required readonly>
+                </div>
+                <div class="form-group">
+                    <label>이용할 층</label>
+                    <select id="resFloor" required onchange="calculatePrice()">
+                        <option value="">층을 선택해 주세요</option>
+                        <option value="1층">1층</option>
+                        <option value="2층">2층</option>
+                        <option value="전체">전체 대관</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>예약자 성함</label>
+                    <input type="text" id="resName" placeholder="성함을 입력해 주세요" required>
+                </div>
+                <div class="form-group">
+                    <label>연락처</label>
+                    <input type="tel" id="resContact" placeholder="연락처를 입력해 주세요 (선택)">
+                </div>
+                <div class="form-group">
+                    <label>이용 시간 (시작시각 ~ 종료시각)</label>
+                    <div class="time-range-group">
+                        <input type="number" id="resStartTime" placeholder="시작" min="0" max="23" required onchange="calculatePrice()">
+                        <input type="number" id="resEndTime" placeholder="종료" min="0" max="23" required onchange="calculatePrice()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>이용 인원수</label>
+                    <input type="number" id="resPeople" placeholder="인원수를 입력해 주세요" min="1" required onchange="calculatePrice()">
+                </div>
+                
+                <div id="pricePreview">이용 조건을 입력하시면 예상 견적 금액이 표시됩니다.</div>
+                <button type="submit" class="btn-submit">예약 신청서 제출</button>
+            </form>
+        </div>
+    </div>
+
+    <button class="admin-login-trigger" onclick="openAdminLogin()">Admin Login</button>
+
+    <script>
+        // [필수] 본인의 구글 시트 웹앱 URL을 입력하세요.
+        const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyXS_-s8my8kV7HAzqGL6-7CI8HSQCrLG7jF1Wr92sPVDfSCAcHkt9eFDkVtr9PY3B5ew/exec
+"; 
+        const MASTER_PW = "0203"; 
+        
+        let calendarInstance = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ko',
+                headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+                height: 'auto', 
+                editable: false,
+                selectable: true,
+                
+                // 4. 날짜 클릭 시 팝업 열기
+                dateClick: function(info) {
+                    openModal(info.dateStr);
+                },
+                
+                events: function(fetchInfo, successCallback, failureCallback) {
+                    if (!SHEET_API_URL || SHEET_API_URL === "YOUR_GOOGLE_WEBAPP_URL") {
+                        const localData = localStorage.getItem('203snap_reserve_data');
+                        successCallback(localData ? JSON.parse(localData) : []);
+                        return;
+                    }
+
+                    fetch(SHEET_API_URL + "?action=getReservations")
+                        .then(res => res.json())
+                        .then(data => {
+                            const formattedEvents = data.map(item => {
+                                let maskedName = item.name && item.name.length > 1 ? item.name.substring(0, 1) + "**님" : (item.name || "예약") + "**님";
+                                return {
+                                    title: `[${item.floor}] ${maskedName}\n(${item.start}시~${item.end}시)`,
+                                    start: item.date,
+                                    color: item.status === '완료' ? '#4A3A2A' : '#D6C7B5',
+                                    allDay: true
+                                };
+                            });
+                            successCallback(formattedEvents);
+                        })
+                        .catch(() => successCallback([]));
+                }
+            });
+            calendarInstance.render();
+        });
+
+        function openModal(dateStr) {
+            document.getElementById('reservationForm').reset();
+            document.getElementById('resDate').value = dateStr;
+            document.getElementById('modalDateTitle').innerText = dateStr + " 예약 등록";
+            document.getElementById('pricePreview').innerText = "이용 조건을 입력하시면 예상 견적 금액이 표시됩니다.";
+            document.getElementById('registrationModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('registrationModal').style.display = 'none';
+        }
+
+        function calculatePrice() {
+            const floor = document.getElementById('resFloor').value;
+            const start = parseInt(document.getElementById('resStartTime').value);
+            const end = parseInt(document.getElementById('resEndTime').value);
+            const people = parseInt(document.getElementById('resPeople').value);
+            const previewDiv = document.getElementById('pricePreview');
+
+            if (!floor || isNaN(start) || isNaN(end) || isNaN(people) || start >= end) {
+                previewDiv.innerText = "이용 조건을 올바르게 완성하시면 예상 견적 금액이 계산됩니다.";
+                return;
+            }
+
+            let hours = end - start;
+            let basePricePerHour = floor === "1층" ? 30000 : (floor === "2층" ? 40000 : 60000);
+            let basePeople = floor === "전체" ? 6 : 4;
+            let total = basePricePerHour * hours;
+            
+            if (people > basePeople) {
+                total += (people - basePeople) * 5000 * hours;
+            }
+            previewDiv.innerHTML = `총 대관시간: ${hours}시간 / 이용 인원: ${people}명<br><strong>예상 금액: ${total.toLocaleString()}원</strong>`;
+        }
+
+        function handleReservationSubmit(event) {
+            event.preventDefault();
+            const date = document.getElementById('resDate').value;
+            const floor = document.getElementById('resFloor').value;
+            const name = document.getElementById('resName').value;
+            const contact = document.getElementById('resContact').value;
+            const start = document.getElementById('resStartTime').value;
+            const end = document.getElementById('resEndTime').value;
+            const people = document.getElementById('resPeople').value;
+
+            if (parseInt(start) >= parseInt(end)) {
+                alert("종료 시간은 시작 시간보다 늦어야 합니다.");
+                return;
+            }
+
+            const formData = { action: "addReservation", date, floor, name, contact, start, end, people, status: "대기" };
+
+            if (SHEET_API_URL && SHEET_API_URL !== "YOUR_GOOGLE_WEBAPP_URL") {
+                fetch(SHEET_API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                })
+                .then(() => {
+                    alert("예약 신청이 정상 접수되었습니다.");
+                    closeModal();
+                    if (calendarInstance) calendarInstance.refetchEvents();
+                })
+                .catch(() => alert("오류가 발생했습니다."));
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target === document.getElementById('registrationModal')) closeModal();
+        }
+
+        function openAdminLogin() {
+            const pwInput = prompt("관리자 인증 비밀번호를 입력해 주세요.");
+            if (pwInput === null) return;
+            if (String(pwInput) === MASTER_PW) {
+                alert("관리자 인증에 성공했습니다.");
+            } else {
+                alert("아이디 또는 비밀번호가 올바르지 않습니다.");
+            }
+        }
+    </script>
+</body>
+</html>
