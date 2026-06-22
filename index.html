@@ -1070,7 +1070,7 @@
         badge.className = `booking-badge ${roomClass}`;
         const roomName = r.room ? r.room : '';
         // Event Content: Time and Floor only
-        badge.innerHTML = `<span class="badge-line-1">[${r.start_hour || ''}~${r.end_hour || ''}시]</span><span class="badge-line-2">${roomName}</span>`;
+        badge.innerHTML = `<span class="badge-line-1">${r.start_hour || ''}~${r.end_hour || ''}시</span> <span class="badge-line-2">${roomName}</span>`;
         badge.onclick = (e) => { e.stopPropagation(); isAdmin ? openRegModal(ds, r) : openDetailModal(r); };
         cell.appendChild(badge);
       });
