@@ -532,7 +532,7 @@
       </div>
       
       <div class="calc-row" style="flex-wrap: nowrap;">
-        <div class="calc-label" style="color: var(--text-muted); font-size: 0.9rem; flex: 2; min-width: 180px;">인원 추가 비용 (<span id="calc-price-extra">0</span>원/명)</div>
+        <div class="calc-label" style="color: var(--text-muted); font-size: 0.9rem; flex: 2; min-width: 180px;">인원 추가 비용 (<span id="calc-price-extra">0</span>원/시간당 추가 인원)</div>
         <div class="calc-inputs" style="flex: 0; min-width: 0;"></div>
         <div class="calc-amount" id="calc-amount-extra" style="color: var(--text-muted); flex: 1;">0원</div>
       </div>
@@ -925,17 +925,18 @@
       const getVal = (id) => parseInt(document.getElementById(id).value);
       
       let sum1 = 0, sum2 = 0, sumAll = 0;
+      let h1 = 0, h2 = 0, hAll = 0;
       let roomsActive = 0;
       let isAllActive = false;
 
       const s1 = getVal('calc-start-1f'), e1 = getVal('calc-end-1f');
-      if (!isNaN(s1) && !isNaN(e1) && e1 > s1) { sum1 = (e1 - s1) * p1; roomsActive++; }
+      if (!isNaN(s1) && !isNaN(e1) && e1 > s1) { h1 = e1 - s1; sum1 = h1 * p1; roomsActive++; }
 
       const s2 = getVal('calc-start-2f'), e2 = getVal('calc-end-2f');
-      if (!isNaN(s2) && !isNaN(e2) && e2 > s2) { sum2 = (e2 - s2) * p2; roomsActive++; }
+      if (!isNaN(s2) && !isNaN(e2) && e2 > s2) { h2 = e2 - s2; sum2 = h2 * p2; roomsActive++; }
 
       const sa = getVal('calc-start-all'), ea = getVal('calc-end-all');
-      if (!isNaN(sa) && !isNaN(ea) && ea > sa) { sumAll = (ea - sa) * pa; isAllActive = true; }
+      if (!isNaN(sa) && !isNaN(ea) && ea > sa) { hAll = ea - sa; sumAll = hAll * pa; isAllActive = true; }
 
       document.getElementById('calc-amount-1f').innerText = sum1.toLocaleString() + '원';
       document.getElementById('calc-amount-2f').innerText = sum2.toLocaleString() + '원';
@@ -947,9 +948,11 @@
       
       const guests = parseInt(document.getElementById('calc-guests').value) || 0;
       let extraGuests = Math.max(0, guests - baseGuests);
-      if (baseGuests === 0) extraGuests = 0;
+      
+      let totalHours = Math.max(h1, h2, hAll);
+      if (baseGuests === 0 || totalHours === 0) extraGuests = 0;
 
-      const sumExtra = extraGuests * pex;
+      const sumExtra = extraGuests * pex * totalHours;
       document.getElementById('calc-amount-extra').innerText = sumExtra.toLocaleString() + '원';
 
       const total = sum1 + sum2 + sumAll + sumExtra;
