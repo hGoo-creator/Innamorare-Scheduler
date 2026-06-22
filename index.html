@@ -637,8 +637,13 @@
     let isAdminLoggedIn = false;
     let isViewModeAdmin = false;
 
-    // Load Settings
-    let appSettings = JSON.parse(localStorage.getItem('203snap_admin_settings') || "{}");
+    // Load Settings safely
+    let appSettings = {};
+    try {
+      appSettings = JSON.parse(localStorage.getItem('203snap_admin_settings') || "{}");
+    } catch(e) {
+      appSettings = {};
+    }
 
     async function fetchData() {
       try {
@@ -647,8 +652,13 @@
         reservations = data.reservations || [];
       } catch (err) {
         console.error("Fetch API fail, using local storage fallback.");
-        reservations = JSON.parse(localStorage.getItem('203snap_data') || "[]");
+        try {
+          reservations = JSON.parse(localStorage.getItem('203snap_data')) || [];
+        } catch(e) {
+          reservations = [];
+        }
       }
+      if (!Array.isArray(reservations)) reservations = [];
       renderAll();
     }
 
@@ -878,15 +888,16 @@
       nd.innerText = d;
       cell.appendChild(nd);
 
-      const dayRes = reservations.filter(r => r.start_date === ds && (isAdmin || currentFilter === '전체' || r.room.includes(currentFilter) || r.room === '전체 대관'));
-      dayRes.sort((a,b) => a.start_hour - b.start_hour);
+      const dayRes = reservations.filter(r => r && r.start_date && r.start_date.substring(0,10) === ds && (isAdmin || currentFilter === '전체' || (r.room && r.room.includes(currentFilter)) || r.room === '전체 대관'));
+      dayRes.sort((a,b) => (a.start_hour || 0) - (b.start_hour || 0));
 
       dayRes.forEach(r => {
         const badge = document.createElement('div');
-        badge.className = `booking-badge ${r.status}`;
+        badge.className = `booking-badge ${r.status || 'pending'}`;
         const name = maskName(r.name);
+        const roomName = r.room ? r.room : '';
         // Event Content: TWO LINES. Name / (Time) Floor.
-        badge.innerHTML = `<span class="badge-line-1">${name}</span><span class="badge-line-2">(${r.start_hour}~${r.end_hour}시) ${r.room}</span>`;
+        badge.innerHTML = `<span class="badge-line-1">${name}</span><span class="badge-line-2">(${r.start_hour || ''}~${r.end_hour || ''}시) ${roomName}</span>`;
         badge.onclick = (e) => { e.stopPropagation(); isAdmin ? openRegModal(ds, r) : openDetailModal(r); };
         cell.appendChild(badge);
       });
@@ -899,11 +910,15 @@
     function renderReservationsTable() {
       const tbody = document.getElementById('reservations-list-body');
       tbody.innerHTML = '';
-      [...reservations].sort((a,b) => b.start_date.localeCompare(a.start_date)).forEach(r => {
+      [...reservations].sort((a,b) => {
+        const da = a.start_date || '';
+        const db = b.start_date || '';
+        return db.localeCompare(da);
+      }).forEach(r => {
         const tr = document.createElement('tr');
         tr.style.cursor = 'pointer';
         tr.onclick = () => openRegModal(r.start_date, r);
-        tr.innerHTML = `<td>${r.start_date}</td><td>${r.start_hour}~${r.end_hour}시</td><td>${r.room}</td><td>${r.name}</td><td>${r.contact}</td><td>${r.status==='confirmed'?'완료':'대기'}</td>`;
+        tr.innerHTML = `<td>${r.start_date || ''}</td><td>${r.start_hour || ''}~${r.end_hour || ''}시</td><td>${r.room || ''}</td><td>${r.name || ''}</td><td>${r.contact || ''}</td><td>${r.status==='confirmed'?'완료':'대기'}</td>`;
         tbody.appendChild(tr);
       });
     }
