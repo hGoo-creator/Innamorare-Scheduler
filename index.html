@@ -394,6 +394,11 @@
     .legend-color.confirmed { background-color: var(--confirmed-bg); border: 1px solid var(--confirmed-border); }
     .legend-color.pending { background-color: var(--pending-bg); border: 1px dashed var(--pending-border); }
 
+    /* Badge Colors by Floor */
+    .booking-badge.room-1f { background-color: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
+    .booking-badge.room-2f { background-color: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; }
+    .booking-badge.room-all { background-color: #FFF3E0; color: #E65100; border: 1px solid #FFE0B2; }
+
     /* Calculator styling */
     .price-calculator-section {
       background: var(--card-bg);
@@ -464,6 +469,12 @@
       .badge-line-2 { font-size: 0.7rem; }
       .modal-content { padding: 1.5rem; }
       .price-calculator-section { padding: 1rem; margin: 1.5rem 1rem 1.5rem 1rem; }
+      .calc-label { font-size: 0.85rem; min-width: 80px; }
+      .calc-inputs select, .calc-inputs input { padding: 0.3rem; font-size: 0.85rem; }
+      .calc-amount { font-size: 0.9rem; }
+      .day-cell { min-width: 0; overflow: hidden; } /* Prevent ratio break */
+      .badge-line-1 { font-size: 0.75rem !important; }
+      .badge-line-2 { font-size: 0.7rem !important; }
     }
   </style>
 </head>
@@ -541,10 +552,9 @@
         <div id="calc-amount-total">0원</div>
       </div>
       
-      <div id="calc-additional-info" style="margin-top: 1.5rem; border-top: 1px solid var(--border-light); padding-top: 1rem; display: none;">
-        <div id="calc-price-content" style="white-space: pre-wrap; font-size: 0.95rem; margin-bottom: 1rem;"></div>
-        <img id="calc-price-image" src="" style="max-width: 100%; border-radius: 4px; display: none; margin-bottom: 1rem;">
-        <div id="calc-price-link-container" style="display:none; text-align:center;"><a id="calc-price-link" href="#" target="_blank" class="btn" style="display: inline-block;">상세 내용 확인 (링크)</a></div>
+      <div id="calc-additional-info" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-align: center; border-top: 1px dashed var(--border-light); padding-top: 1rem;">
+        - 최소 예약 시간은 2시간입니다.<br>
+        - 계산된 가격은 예상금액이며, 상담 후 최종 확정됩니다.
       </div>
     </div>
   </header>
@@ -553,8 +563,9 @@
   <div id="view-visitor" class="view-section active container">
 
     <div class="legend-container">
-      <div class="legend-item"><span class="legend-color confirmed"></span>예약완료</div>
-      <div class="legend-item"><span class="legend-color pending"></span>예약대기</div>
+      <div class="legend-item"><span class="legend-color" style="background:#E8F5E9; border:1px solid #C8E6C9;"></span>1층</div>
+      <div class="legend-item"><span class="legend-color" style="background:#E3F2FD; border:1px solid #BBDEFB;"></span>2층</div>
+      <div class="legend-item"><span class="legend-color" style="background:#FFF3E0; border:1px solid #FFE0B2;"></span>전체</div>
     </div>
 
     <div class="calendar-nav">
@@ -652,24 +663,6 @@
             <label>인원추가 단가 (원/명)</label>
             <input type="number" id="input-setting-price-extra" placeholder="예: 5000">
           </div>
-        </div>
-
-        <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-brown);">[가격 안내 추가 정보]</h4>
-        <div class="form-group">
-          <label>텍스트</label>
-          <textarea id="input-setting-price-text" rows="4" placeholder="가격 안내 상세 내용..."></textarea>
-        </div>
-        <div class="form-group">
-          <label>이미지 첨부 (최대 2MB 권장)</label>
-          <input type="file" id="input-setting-price-image" accept="image/*" onchange="handleImageUpload(event)">
-          <div id="price-image-preview-container" style="display:none; margin-top: 0.5rem;">
-            <img id="price-image-preview" src="" style="max-height: 100px; border-radius: 4px;">
-            <button type="button" onclick="clearPriceImage()" style="margin-left: 1rem; padding: 0.3rem 0.6rem;">이미지 삭제</button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>외부 링크</label>
-          <input type="text" id="input-setting-price-link" placeholder="https://...">
         </div>
         
         <button class="btn" onclick="saveSettings()" style="margin-top: 1rem;">설정 저장</button>
@@ -844,58 +837,10 @@
       document.getElementById('input-setting-notice').value = appSettings.notice || '';
       document.getElementById('input-setting-inquiry').value = appSettings.inquiry || '';
       document.getElementById('input-setting-directions').value = appSettings.directions || '';
-      document.getElementById('input-setting-price-text').value = appSettings.priceText || '';
-      document.getElementById('input-setting-price-link').value = appSettings.priceLink || '';
       document.getElementById('input-setting-price-1f').value = appSettings.price1f || '';
       document.getElementById('input-setting-price-2f').value = appSettings.price2f || '';
       document.getElementById('input-setting-price-all').value = appSettings.priceAll || '';
       document.getElementById('input-setting-price-extra').value = appSettings.priceExtra || '';
-      if (appSettings.priceImage) {
-        uploadedPriceImage = appSettings.priceImage;
-        document.getElementById('price-image-preview-container').style.display = 'block';
-        document.getElementById('price-image-preview').src = appSettings.priceImage;
-      } else {
-        document.getElementById('price-image-preview-container').style.display = 'none';
-      }
-    }
-
-    let uploadedPriceImage = null;
-    function handleImageUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 600;
-          let width = img.width;
-          let height = img.height;
-          if (width > MAX_WIDTH) {
-            height = Math.round(height * MAX_WIDTH / width);
-            width = MAX_WIDTH;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          uploadedPriceImage = canvas.toDataURL('image/jpeg', 0.5); // Resize and compress for cloud sync
-          document.getElementById('price-image-preview-container').style.display = 'block';
-          document.getElementById('price-image-preview').src = uploadedPriceImage;
-        };
-        img.src = evt.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function clearPriceImage() {
-      uploadedPriceImage = null;
-      document.getElementById('input-setting-price-image').value = '';
-      document.getElementById('price-image-preview-container').style.display = 'none';
-      document.getElementById('price-image-preview').src = '';
-      if(appSettings) {
-         appSettings.priceImage = null;
-      }
     }
 
     async function saveSettings() {
@@ -906,10 +851,7 @@
         price1f: parseInt(document.getElementById('input-setting-price-1f').value) || 0,
         price2f: parseInt(document.getElementById('input-setting-price-2f').value) || 0,
         priceAll: parseInt(document.getElementById('input-setting-price-all').value) || 0,
-        priceExtra: parseInt(document.getElementById('input-setting-price-extra').value) || 0,
-        priceText: document.getElementById('input-setting-price-text').value.trim(),
-        priceLink: document.getElementById('input-setting-price-link').value.trim(),
-        priceImage: uploadedPriceImage
+        priceExtra: parseInt(document.getElementById('input-setting-price-extra').value) || 0
       };
       localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
       
@@ -990,28 +932,6 @@
       document.getElementById('calc-price-2f').innerText = (appSettings.price2f || 0).toLocaleString();
       document.getElementById('calc-price-all').innerText = (appSettings.priceAll || 0).toLocaleString();
       document.getElementById('calc-price-extra').innerText = (appSettings.priceExtra || 0).toLocaleString();
-      
-      const addInfo = document.getElementById('calc-additional-info');
-      let hasInfo = false;
-      if (appSettings.priceText) {
-        document.getElementById('calc-price-content').innerText = appSettings.priceText;
-        document.getElementById('calc-price-content').style.display = 'block';
-        hasInfo = true;
-      } else document.getElementById('calc-price-content').style.display = 'none';
-      
-      if (appSettings.priceImage) {
-        document.getElementById('calc-price-image').src = appSettings.priceImage;
-        document.getElementById('calc-price-image').style.display = 'block';
-        hasInfo = true;
-      } else document.getElementById('calc-price-image').style.display = 'none';
-      
-      if (appSettings.priceLink) {
-        document.getElementById('calc-price-link').href = appSettings.priceLink;
-        document.getElementById('calc-price-link-container').style.display = 'block';
-        hasInfo = true;
-      } else document.getElementById('calc-price-link-container').style.display = 'none';
-      
-      addInfo.style.display = hasInfo ? 'block' : 'none';
       
       calculatePrice();
     }
@@ -1149,11 +1069,11 @@
 
       dayRes.forEach(r => {
         const badge = document.createElement('div');
-        badge.className = `booking-badge ${r.status || 'pending'}`;
-        const name = maskName(r.name);
+        let roomClass = r.room === '1층' ? 'room-1f' : r.room === '2층' ? 'room-2f' : r.room === '전체' ? 'room-all' : '';
+        badge.className = `booking-badge ${roomClass}`;
         const roomName = r.room ? r.room : '';
-        // Event Content: TWO LINES. Name / (Time) Floor.
-        badge.innerHTML = `<span class="badge-line-1">${name}</span><span class="badge-line-2">(${r.start_hour || ''}~${r.end_hour || ''}시) ${roomName}</span>`;
+        // Event Content: Time and Floor only
+        badge.innerHTML = `<span class="badge-line-1" style="font-weight:600;">${r.start_hour || ''}~${r.end_hour || ''}시</span><span class="badge-line-2">${roomName}</span>`;
         badge.onclick = (e) => { e.stopPropagation(); isAdmin ? openRegModal(ds, r) : openDetailModal(r); };
         cell.appendChild(badge);
       });
@@ -1272,7 +1192,7 @@
       document.getElementById('modal-room-title').innerText = `[${r.room}] 대관 정보`;
       document.getElementById('modal-status').innerText = r.status === 'confirmed' ? '예약완료' : '예약대기';
       document.getElementById('modal-status').style.color = r.status === 'confirmed' ? 'var(--confirmed-bg)' : 'var(--pending-text)';
-      document.getElementById('modal-date').innerText = r.start_date;
+      document.getElementById('modal-date').innerText = (r.start_date || '').substring(0, 10);
       document.getElementById('modal-time').innerText = `${r.start_hour}시 ~ ${r.end_hour}시`;
       document.getElementById('modal-name').innerText = maskName(r.name);
       document.getElementById('detail-modal').classList.add('show');
