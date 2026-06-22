@@ -398,6 +398,8 @@
     @media (max-width: 768px) {
       body { font-size: 16px; } /* Ensures readability but fits nicely */
       h1 { font-size: 2.5rem; }
+      .header-links-bar { gap: 1rem; flex-direction: column; align-items: center; }
+      .header-link-item { font-size: 0.95rem; }
       .calendar-grid { min-height: 500px; }
       .day-cell { min-height: 80px; padding: 0.2rem; }
       .booking-badge { font-size: 0.75rem; padding: 0.3rem; }
@@ -422,7 +424,7 @@
         오시는 길
       </a>
       <a href="#" id="link-price" class="header-link-item" onclick="openPriceModal(event)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
         가격 안내
       </a>
       <a href="#" id="link-inquiry" class="header-link-item" target="_blank">
@@ -469,7 +471,7 @@
 
     <div id="admin-operations" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h2 style="font-family: var(--font-title); font-size: 2rem;">관리자 대시보드</h2>
+        <h2 style="font-family: var(--font-title); font-size: 2rem;">관리자 모드</h2>
         <button onclick="handleAdminLogout()" class="btn" style="width: auto; padding: 0.5rem 1rem; background: var(--card-bg); color: var(--text-brown); border-color: var(--border-light);">로그아웃</button>
       </div>
 
@@ -573,9 +575,9 @@
         <div class="form-group">
           <label>이용할 층 *</label>
           <select id="res-room" required>
-            <option value="1층 단독">1층 단독</option>
-            <option value="2층 단독">2층 단독</option>
-            <option value="전체 대관">전체 대관</option>
+            <option value="1층">1층</option>
+            <option value="2층">2층</option>
+            <option value="전체">전체</option>
           </select>
         </div>
         <div class="form-group">
@@ -650,6 +652,17 @@
         const res = await fetch(`${SHEET_API_URL}?action=getData`);
         const data = await res.json();
         reservations = data.reservations || [];
+        
+        // Extract Settings from reservations to sync across devices
+        const settingsRes = reservations.find(r => r.room === "SETTINGS");
+        if (settingsRes) {
+          try {
+            const fetchedSettings = JSON.parse(settingsRes.name);
+            appSettings = { ...appSettings, ...fetchedSettings };
+            localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
+          } catch(e) {}
+          reservations = reservations.filter(r => r.room !== "SETTINGS");
+        }
       } catch (err) {
         console.error("Fetch API fail, using local storage fallback.");
         try {
@@ -711,9 +724,25 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(evt) {
-        uploadedPriceImage = evt.target.result;
-        document.getElementById('price-image-preview-container').style.display = 'block';
-        document.getElementById('price-image-preview').src = uploadedPriceImage;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 600;
+          let width = img.width;
+          let height = img.height;
+          if (width > MAX_WIDTH) {
+            height = Math.round(height * MAX_WIDTH / width);
+            width = MAX_WIDTH;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          uploadedPriceImage = canvas.toDataURL('image/jpeg', 0.5); // Resize and compress for cloud sync
+          document.getElementById('price-image-preview-container').style.display = 'block';
+          document.getElementById('price-image-preview').src = uploadedPriceImage;
+        };
+        img.src = evt.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -728,7 +757,7 @@
       }
     }
 
-    function saveSettings() {
+    async function saveSettings() {
       appSettings = {
         notice: document.getElementById('input-setting-notice').value.trim(),
         inquiry: document.getElementById('input-setting-inquiry').value.trim(),
@@ -738,8 +767,25 @@
         priceImage: uploadedPriceImage
       };
       localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
+      
+      const settingsStr = JSON.stringify(appSettings);
+      let settingsRes = reservations.find(r => r.room === "SETTINGS");
+      if (settingsRes) {
+        settingsRes.name = settingsStr;
+      } else {
+        reservations.push({
+          id: Date.now() + 999999,
+          start_date: "2099-12-31",
+          start_hour: 0, end_hour: 0,
+          room: "SETTINGS",
+          name: settingsStr,
+          contact: "", status: "confirmed"
+        });
+      }
+      
+      await postData();
       applySettings();
-      alert('설정이 저장되었습니다.');
+      alert('설정이 클라우드에 성공적으로 저장되었습니다.');
     }
 
     function applySettings() {
@@ -888,7 +934,7 @@
       nd.innerText = d;
       cell.appendChild(nd);
 
-      const dayRes = reservations.filter(r => r && r.start_date && r.start_date.substring(0,10) === ds && (isAdmin || currentFilter === '전체' || (r.room && r.room.includes(currentFilter)) || r.room === '전체 대관'));
+      const dayRes = reservations.filter(r => r && r.start_date && r.start_date.substring(0,10) === ds && (isAdmin || currentFilter === '전체' || (r.room && r.room.includes(currentFilter)) || r.room === '전체'));
       dayRes.sort((a,b) => (a.start_hour || 0) - (b.start_hour || 0));
 
       dayRes.forEach(r => {
@@ -957,7 +1003,7 @@
         document.getElementById('res-contact').value = '';
         document.getElementById('res-start-hour').value = 9;
         updateEndHourOptions();
-        document.getElementById('res-room').value = '1층 단독';
+        document.getElementById('res-room').value = '1층';
         document.getElementById('res-status').value = 'pending';
         document.getElementById('btn-delete').style.display = 'none';
       }
