@@ -220,18 +220,14 @@
       border: none;
     }
     .badge-line-1, .badge-line-2 {
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.4;
+      display: inline-block;
     }
     .badge-line-1 {
       font-weight: 700;
+      margin-right: 0.3rem;
     }
     .badge-line-2 {
-      font-size: 0.85rem;
-      opacity: 0.9;
+      font-size: 0.95rem;
     }
 
     /* Modals */
@@ -1078,8 +1074,8 @@
         let roomClass = r.room === '1층' ? 'room-1f' : r.room === '2층' ? 'room-2f' : r.room === '전체' ? 'room-all' : '';
         badge.className = `booking-badge ${roomClass}`;
         const roomName = r.room ? r.room : '';
-        // Event Content: [층] 이름**님 / (시간)
-        badge.innerHTML = `<div class="badge-line-1">[${roomName}] ${maskName(r.name)}</div><div class="badge-line-2">(${r.start_hour || ''}~${r.end_hour || ''}시)</div>`;
+        // Event Content: Time and Floor only
+        badge.innerHTML = `<span class="badge-line-1">${r.start_hour || ''}~${r.end_hour || ''}시</span><span class="badge-line-2">${roomName}</span>`;
         badge.onclick = (e) => { e.stopPropagation(); isAdmin ? openRegModal(ds, r) : openDetailModal(r); };
         cell.appendChild(badge);
       });
