@@ -949,7 +949,7 @@
       const guests = parseInt(document.getElementById('calc-guests').value) || 0;
       let extraGuests = Math.max(0, guests - baseGuests);
       
-      let totalHours = Math.max(h1, h2, hAll);
+      let totalHours = h1 + h2 + hAll;
       if (baseGuests === 0 || totalHours === 0) extraGuests = 0;
 
       const sumExtra = extraGuests * pex * totalHours;
