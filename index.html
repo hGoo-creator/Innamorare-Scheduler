@@ -760,7 +760,7 @@
   </div>
 
   <script>
-    const API_URL = "/api/reservations";
+    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyXS_-s8my8kV7HAzqGL6-7CI8HSQCrLG7jF1Wr92sPVDfSCAcHkt9eFDkVtr9PY3B5ew/exec";
     
     let currentDate = new Date();
     // currentDate.setFullYear(2026, 5, 21); // Remove this to load actual current month
@@ -780,19 +780,27 @@
 
     async function fetchData() {
       try {
-        // Fetch Settings
-        const settingsRes = await fetch(`${API_URL}?action=getSettings`);
-        const settingsData = await settingsRes.json();
-        if (settingsData && settingsData.settings) {
-          appSettings = settingsData.settings;
-          localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
-        }
-
-        // Fetch Reservations
-        const res = await fetch(`${API_URL}?action=getReservations`);
+        const res = await fetch(`${SHEET_API_URL}?action=getData`);
         const data = await res.json();
         reservations = data.reservations || [];
         
+        // Extract Settings from reservations to sync across devices
+        const settingsRecords = reservations.filter(r => r.name === "SETTINGS_DATA");
+        if (settingsRecords.length > 0) {
+          // Use the last one (most recent if duplicated)
+          const latestSettings = settingsRecords[settingsRecords.length - 1];
+          try {
+            const fetchedSettings = JSON.parse(latestSettings.description);
+            appSettings = { ...appSettings, ...fetchedSettings };
+            localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
+          } catch(e) {}
+          
+          // Clean up duplicates by keeping only the latest one
+          if (settingsRecords.length > 1) {
+             reservations = reservations.filter(r => r.name !== "SETTINGS_DATA");
+             reservations.push(latestSettings);
+          }
+        }
       } catch (err) {
         console.error("Fetch API fail, using local storage fallback.");
         try {
@@ -808,9 +816,9 @@
 
     async function postData() {
       try {
-        await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        await fetch(SHEET_API_URL, {
+          method: "POST", mode: "cors",
+          headers: { "Content-Type": "text/plain" },
           body: JSON.stringify({ action: "saveReservations", reservations })
         });
       } catch (err) {
@@ -859,23 +867,26 @@
       };
       localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
       
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "saveSettings", settings: appSettings })
+      const settingsStr = JSON.stringify(appSettings);
+      let settingsRes = reservations.find(r => r.name === "SETTINGS_DATA");
+      if (settingsRes) {
+        settingsRes.description = settingsStr;
+      } else {
+        reservations.push({
+          id: Date.now() + 999999,
+          start_date: "2099-12-31",
+          start_hour: 0, end_hour: 0,
+          room: "1층",
+          name: "SETTINGS_DATA",
+          contact: "", status: "confirmed",
+          parking_count: "", guest_count: "", total_price: "",
+          description: settingsStr
         });
-        const result = await res.json();
-        if(result.success) {
-          applySettings();
-          alert('설정이 클라우드에 영구적으로 안전하게 저장되었습니다.');
-        } else {
-          alert('설정 저장 중 오류가 발생했습니다: ' + (result.error || '') + ' ' + (result.details || ''));
-        }
-      } catch (err) {
-        console.error(err);
-        alert('설정 저장 중 오류가 발생했습니다: ' + err.message);
       }
+      
+      await postData();
+      applySettings();
+      alert('설정이 클라우드에 성공적으로 저장되었습니다.');
     }
 
     function applySettings() {
