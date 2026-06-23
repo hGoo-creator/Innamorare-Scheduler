@@ -626,6 +626,10 @@
           <label>오시는 길 링크</label>
           <input type="text" id="input-setting-directions" placeholder="https://...">
         </div>
+        <div class="form-group" style="margin-top: 1.5rem;">
+          <label>관리자 비밀번호 변경</label>
+          <input type="password" id="input-setting-password" placeholder="새로운 비밀번호 입력 (비워두면 기존 유지)">
+        </div>
         <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-brown);">[가격 및 단가 설정]</h4>
         <div class="form-row">
           <div class="form-group">
@@ -776,27 +780,19 @@
 
     async function fetchData() {
       try {
-        const res = await fetch(API_URL);
+        // Fetch Settings
+        const settingsRes = await fetch(`${API_URL}?action=getSettings`);
+        const settingsData = await settingsRes.json();
+        if (settingsData && settingsData.settings) {
+          appSettings = settingsData.settings;
+          localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
+        }
+
+        // Fetch Reservations
+        const res = await fetch(`${API_URL}?action=getReservations`);
         const data = await res.json();
         reservations = data.reservations || [];
         
-        // Extract Settings from reservations to sync across devices
-        const settingsRecords = reservations.filter(r => r.name === "SETTINGS_DATA");
-        if (settingsRecords.length > 0) {
-          // Use the last one (most recent if duplicated)
-          const latestSettings = settingsRecords[settingsRecords.length - 1];
-          try {
-            const fetchedSettings = JSON.parse(latestSettings.description);
-            appSettings = { ...appSettings, ...fetchedSettings };
-            localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
-          } catch(e) {}
-          
-          // Clean up duplicates by keeping only the latest one
-          if (settingsRecords.length > 1) {
-             reservations = reservations.filter(r => r.name !== "SETTINGS_DATA");
-             reservations.push(latestSettings);
-          }
-        }
       } catch (err) {
         console.error("Fetch API fail, using local storage fallback.");
         try {
@@ -806,6 +802,7 @@
         }
       }
       if (!Array.isArray(reservations)) reservations = [];
+      applySettings();
       renderAll();
     }
 
@@ -837,6 +834,7 @@
     }
 
     function loadSettingsInputs() {
+      document.getElementById('input-setting-password').value = '';
       document.getElementById('input-setting-notice').value = appSettings.notice || '';
       document.getElementById('input-setting-inquiry').value = appSettings.inquiry || '';
       document.getElementById('input-setting-directions').value = appSettings.directions || '';
@@ -847,7 +845,10 @@
     }
 
     async function saveSettings() {
+      const pwInput = document.getElementById('input-setting-password').value.trim();
+      
       appSettings = {
+        adminPassword: pwInput !== "" ? pwInput : (appSettings.adminPassword || "0203"),
         notice: document.getElementById('input-setting-notice').value.trim(),
         inquiry: document.getElementById('input-setting-inquiry').value.trim(),
         directions: document.getElementById('input-setting-directions').value.trim(),
@@ -858,26 +859,23 @@
       };
       localStorage.setItem('203snap_admin_settings', JSON.stringify(appSettings));
       
-      const settingsStr = JSON.stringify(appSettings);
-      let settingsRes = reservations.find(r => r.name === "SETTINGS_DATA");
-      if (settingsRes) {
-        settingsRes.description = settingsStr;
-      } else {
-        reservations.push({
-          id: Date.now() + 999999,
-          start_date: "2099-12-31",
-          start_hour: 0, end_hour: 0,
-          room: "1층",
-          name: "SETTINGS_DATA",
-          contact: "", status: "confirmed",
-          parking_count: "", guest_count: "", total_price: "",
-          description: settingsStr
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "saveSettings", settings: appSettings })
         });
+        const result = await res.json();
+        if(result.success) {
+          applySettings();
+          alert('설정이 클라우드에 영구적으로 안전하게 저장되었습니다.');
+        } else {
+          alert('설정 저장 중 오류가 발생했습니다.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('설정 저장 중 오류가 발생했습니다.');
       }
-      
-      await postData();
-      applySettings();
-      alert('설정이 클라우드에 성공적으로 저장되었습니다.');
     }
 
     function applySettings() {
@@ -984,8 +982,9 @@
 
     function handleAdminLogin(e) {
       e.preventDefault();
-      const pw = document.getElementById('login-pw').value;
-      if (pw === '0203') { // Master password
+      const pw = String(document.getElementById('login-pw').value);
+      const correctPw = String(appSettings.adminPassword || '0203');
+      if (pw === correctPw) { // Password verification
         sessionStorage.setItem('admin_logged', 'true');
         isAdminLoggedIn = true;
         document.getElementById('admin-login-card').style.display = 'none';
