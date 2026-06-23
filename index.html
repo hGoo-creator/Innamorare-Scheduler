@@ -630,6 +630,13 @@
           <label>관리자 비밀번호 변경</label>
           <input type="password" id="input-setting-password" placeholder="새로운 비밀번호 입력 (비워두면 기존 유지)">
         </div>
+        
+        <div style="margin-top: 1.5rem; padding: 1rem; border: 1px solid #FFCDD2; background-color: #FFEBEE; border-radius: 8px;">
+          <h4 style="margin-top: 0; color: #D32F2F;">데이터 마이그레이션</h4>
+          <p style="font-size: 0.9rem; color: #555; margin-bottom: 0.5rem;">기존 구글 시트의 예약 및 설정 데이터를 현재 Vercel KV 데이터베이스로 모두 복사해 옵니다.</p>
+          <button class="btn" onclick="migrateData()" style="background-color: #D32F2F; color: white;">구글 시트 데이터 가져오기</button>
+        </div>
+
         <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-brown);">[가격 및 단가 설정]</h4>
         <div class="form-row">
           <div class="form-group">
@@ -804,6 +811,56 @@
       if (!Array.isArray(reservations)) reservations = [];
       applySettings();
       renderAll();
+    }
+
+    async function migrateData() {
+      if (confirm('기존 구글 시트의 모든 데이터를 Vercel KV로 가져오시겠습니까? 기존 데이터가 복구됩니다!')) {
+        try {
+          const SHEET_URL = "https://script.google.com/macros/s/AKfycbyXS_-s8my8kV7HAzqGL6-7CI8HSQCrLG7jF1Wr92sPVDfSCAcHkt9eFDkVtr9PY3B5ew/exec";
+          document.body.style.cursor = 'wait';
+          
+          // 1. Fetch from Google Sheet
+          const res = await fetch(`${SHEET_URL}?action=getData`);
+          const data = await res.json();
+          let allRes = data.reservations || [];
+          
+          let settingsRes = allRes.filter(r => r.name === "SETTINGS_DATA");
+          let settingsObj = appSettings; // Keep current as base
+          if (settingsRes.length > 0) {
+            const latest = settingsRes[settingsRes.length - 1];
+            try { 
+              const parsed = JSON.parse(latest.description); 
+              settingsObj = { ...settingsObj, ...parsed };
+            } catch(e){}
+            allRes = allRes.filter(r => r.name !== "SETTINGS_DATA");
+          }
+          
+          // 2. Save Settings to Vercel KV
+          const sRes = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "saveSettings", settings: settingsObj })
+          });
+          const sResult = await sRes.json();
+          if(!sResult.success) throw new Error("설정 저장 실패: " + (sResult.error || ''));
+
+          // 3. Save Reservations to Vercel KV
+          const rRes = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "saveReservations", reservations: allRes })
+          });
+          const rResult = await rRes.json();
+          if(!rResult.success) throw new Error("예약 저장 실패: " + (rResult.error || ''));
+          
+          document.body.style.cursor = 'default';
+          alert('데이터 복구(마이그레이션)가 성공적으로 완료되었습니다! 페이지를 새로고침합니다.');
+          location.reload();
+        } catch(e) {
+          document.body.style.cursor = 'default';
+          alert('마이그레이션 실패: ' + e.message);
+        }
+      }
     }
 
     async function postData() {
