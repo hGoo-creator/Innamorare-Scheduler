@@ -549,6 +549,9 @@
         - 최소 예약 시간은 2시간입니다.<br>
         - 계산된 가격은 예상금액이며, 상담 후 최종 확정됩니다.
       </div>
+      <div style="margin-top: 1rem; text-align: center;">
+        <button class="btn" onclick="resetCalculator()" style="background: var(--card-bg); color: var(--text-brown); border-color: var(--border-light); width: 100%; padding: 0.75rem;">다시 계산하기</button>
+      </div>
     </div>
   </header>
 
@@ -991,6 +994,17 @@
       document.getElementById('calc-price-all').innerText = (appSettings.priceAll || 0).toLocaleString();
       document.getElementById('calc-price-extra').innerText = (appSettings.priceExtra || 0).toLocaleString();
       
+      calculatePrice();
+    }
+
+    function resetCalculator() {
+      document.getElementById('calc-start-1f').value = '';
+      document.getElementById('calc-end-1f').value = '';
+      document.getElementById('calc-start-2f').value = '';
+      document.getElementById('calc-end-2f').value = '';
+      document.getElementById('calc-start-all').value = '';
+      document.getElementById('calc-end-all').value = '';
+      document.getElementById('calc-guests').value = '0';
       calculatePrice();
     }
 
